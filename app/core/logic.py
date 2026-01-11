@@ -1,7 +1,7 @@
 from app.core.ai_brain import SentinelBrain
 
-# Initialize the brain with the 'Smart' model (Claude 3.5 Sonnet)
-agent = SentinelBrain(provider="anthropic")
+# Initialize the brain
+agent = SentinelBrain()
 
 def analyze_code_logic(requirements: str, code_diff: str):
     """

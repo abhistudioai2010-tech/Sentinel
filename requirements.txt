@@ -5,3 +5,12 @@ anthropic
 openai
 PyGithub
 httpx
+supabase
+anthropic
+fastapi
+httpx
+openai
+PyGithub
+python-dotenv
+supabase
+uvicorn
