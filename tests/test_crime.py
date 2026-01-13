@@ -4,3 +4,8 @@ def i_am_lazy():
 # Adding a new violation to trigger the alarm!
 def another_empty_function():
     pass
+
+def i_am_lazy():
+    pass
+
+# I am adding this comment to force a new scan!
