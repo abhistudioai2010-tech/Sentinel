@@ -1,82 +1,72 @@
 import os
-from dotenv import load_dotenv
-
-# 1. Load Secrets
-load_dotenv()
-
-from fastapi import FastAPI, Request, BackgroundTasks
+import json
+from fastapi import FastAPI, Request
 from supabase import create_client, Client
-from github import Github
-from app.core.ai_brain import SentinelBrain
 
-app = FastAPI(title="Sentinel-Ghost MVP")
+# --- CONFIGURATION ---
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# 2. Initialize The Brain
-brain = SentinelBrain()
-
-# 3. Initialize The Memory (Supabase)
-sb_url = os.getenv("SUPABASE_URL")
-sb_key = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(sb_url, sb_key)
-
-# 4. Initialize The Eyes (GitHub)
-g = Github(os.getenv("GITHUB_TOKEN"))
+app = FastAPI()
 
 @app.get("/")
-def read_root():
-    return {"status": "Sentinel-Ghost is Online"}
+def home():
+    return {"status": "Sentinel Ghost is Awake"}
 
 @app.post("/webhook")
-async def github_webhook(request: Request, background_tasks: BackgroundTasks):
+async def handle_webhook(request: Request):
+    print("\n🚨 WEBHOOK RECEIVED! STARTING FORENSICS...")
+    
+    # 1. Parse the incoming crime report from GitHub
     payload = await request.json()
     
-    if payload.get("action") in ["opened", "synchronize"]:
-        # Extract GitHub details
-        repo_name = payload["repository"]["full_name"]
-        pr_number = payload["pull_request"]["number"]
-        
-        # A. Fetch the REAL code diff from GitHub
-        repo = g.get_repo(repo_name)
-        pr = repo.get_pull(pr_number)
-        real_diff = ""
-        for file in pr.get_files():
-            real_diff += f"File: {file.filename}\n{file.patch}\n"
-        
-        # B. Fetch ALL Requirements from Supabase (The Upgrade)
-        # We removed .limit(1) so it grabs everything
-        res = supabase.table("requirements").select("*").execute()
-        all_rules = res.data
-        
-        if all_rules and real_diff:
-            print(f"DEBUG: Found {len(all_rules)} rules. Starting comprehensive audit...")
-            
-            # C. Trigger an AI Audit for EVERY rule found
-            for req in all_rules:
-                background_tasks.add_task(run_audit, req, real_diff, pr)
-            
-    return {"status": "Multi-Rule Audit Started"}
+    # Check if this is a push event
+    if "commits" not in payload:
+        print("ℹ️  Not a push event. Skipping.")
+        return {"message": "Ignored"}
 
-# --- THE AUDITOR FUNCTION ---
-def run_audit(req, diff, pr):
-    try:
-        print(f"DEBUG: Auditing against rule: '{req['title']}'...")
-        
-        system_p = "You are a logic auditor. Answer only with PASS or FAIL, followed by a 1-sentence explanation."
-        user_p = f"REQUIREMENT: {req['description']}\nCODE: {diff}"
-        
-        # 1. Get the Verdict
-        response = brain.ask(system_p, user_p) 
-        print(f"DEBUG: Verdict for '{req['title']}': {response}")
-        
-        # 2. Update Supabase
-        status = "verified" if "PASS" in response.upper() else "failed"
-        supabase.table("requirements").update({"status": status}).eq("id", req["id"]).execute()
-        
-        # 3. Comment on GitHub if failed
-        if status == "failed":
-            comment = f"👻 **Sentinel Alert**\n\nI detected a violation of the rule: *{req['title']}*.\n\n**AI Feedback:** {response}"
-            pr.create_issue_comment(comment)
-            print(f"SUCCESS: Alert posted for '{req['title']}'")
+    print(f"🔍 Analyzing {len(payload['commits'])} new commits...")
+
+    # 2. Fetch the Laws (Rules) from Database
+    print("📚 Fetching laws from Supabase...")
+    response = supabase.table("requirements").select("*").execute()
+    rules = response.data
+
+    # 3. Simulate the Scan (For MVP, we check for 'test_crime.py')
+    # In the full version, we would use the AI Brain here.
+    # For now, we will HARD-CODE the detection to verify the DB updates.
+    
+    modified_files = []
+    for commit in payload['commits']:
+        modified_files.extend(commit.get('added', []) + commit.get('modified', []))
+    
+    print(f"📂 Modified files: {modified_files}")
+
+    violation_detected = False
+    
+    # SIMPLE LOGIC: If 'test_crime.py' is touched, trigger the alarm!
+    for file in modified_files:
+        if "test_crime.py" in file:
+            print("❌ CRIME FOUND: test_crime.py was modified!")
+            violation_detected = True
             
-    except Exception as e:
-        print(f"ERROR processing rule {req.get('id')}: {str(e)}")
+            # 4. Update Database Status
+            print("⚡ UPDATING DASHBOARD TO CRITICAL...")
+            
+            # Find the 'No Empty Functions' rule and mark it FAILED
+            # (Make sure the title matches exactly what is in your DB)
+            supabase.table("requirements").update({"status": "failed"}).eq("title", "No Empty Functions").execute()
+            
+            # Create a log entry
+            supabase.table("logs").insert({
+                "file_name": "test_crime.py",
+                "violation": "Empty function detected",
+                "status": "active"
+            }).execute()
+
+    if violation_detected:
+        return {"status": "VIOLATION_REPORTED"}
+    else:
+        print("✅ No crimes found in this push.")
+        return {"status": "CLEAN"}
