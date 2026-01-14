@@ -1,18 +1,9 @@
-def i_am_lazy():
-    pass
+import os
 
-# Adding a new violation to trigger the alarm!
-def another_empty_function():
-    pass
-
-def i_am_lazy():
-    pass
-
-# I am adding this comment to force a new scan!
-
-# Triggering the new Brain Logic
-def another_empty_one():
-    pass
-
-def final_mvp_test():
-    pass
+def process_payment():
+    # This is a generic "password" that GitHub doesn't care about.
+    # But Gemini will see "password" and "hardcoded" and scream!
+    app_password = "my_unsafe_admin_password"
+    
+    print(f"Login with: {app_password}")
+    return "Done"
