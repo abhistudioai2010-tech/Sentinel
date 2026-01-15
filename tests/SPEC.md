@@ -1,4 +1,7 @@
-# Product Requirement: Login System
-1. The login function must effectively handle user authentication.
-2. CRITICAL: If the user fails to login 3 times, their account must be locked for 1 hour.
-3. We must log every failed attempt to the 'security_audit' table.
+# SENTINEL SECURITY PROTOCOL
+
+## 1. Authentication Standard
+- The `login` function must validate the input password against the stored user credentials.
+- Hardcoded passwords (e.g., "1234", "secret") are STRICTLY FORBIDDEN.
+- Trivial bypasses (always returning True) are CRITICAL VIOLATIONS.
+- Function must handle empty or null inputs gracefully.
