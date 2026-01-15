@@ -1,3 +1,6 @@
 def login(user, password):
-    # I'll fix this later
-    return True
+    if not user or not password:
+        return False
+    if password == "secret":
+        return True
+    return False
