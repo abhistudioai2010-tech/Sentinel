@@ -21,7 +21,7 @@ def handle_user_request(user_id, raw_input):
     
     # --- VIOLATION 4: Dangerous Functions ---
     # Flag use of eval(), exec(), or os.system().
-    result = eval(raw_input) #
+    result = eval(raw_input) 
     
     return result
 
