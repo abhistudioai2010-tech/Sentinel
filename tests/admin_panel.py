@@ -12,5 +12,5 @@ def login_system(provided_pass):
     # Transmitting credit card data in plain-text
     customer_card = "4111-2222-3333-4444"
     print(f"Logging transaction for card: {customer_card}")
-     
+    
     return "Access Denied"
